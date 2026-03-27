@@ -18,7 +18,7 @@ import {
   Clock,
   ChevronRight,
   ChevronDown,
-  Users,
+  Layers,
   HardDrive,
   Calendar
 } from 'lucide-react';
@@ -31,7 +31,9 @@ interface Project {
   tech: string;
   status: 'active' | 'completed';
   size: string;
-  contributors: number;
+  modules: number;
+  progress?: number;
+  currentTask?: string;
 }
 
 type ModalConfig = {
@@ -50,10 +52,10 @@ const generateId = () => Math.random().toString(36).substr(2, 9);
 const getRandomItem = <T,>(arr: T[]): T => arr[Math.floor(Math.random() * arr.length)];
 
 const INITIAL_PROJECTS: Project[] = [
-  { id: '1', name: 'Core Infrastructure', updatedAt: new Date(), tech: 'Rust', status: 'active', size: '1.2 GB', contributors: 4 },
-  { id: '2', name: 'Authentication Service', updatedAt: new Date(Date.now() - 86400000 * 2), tech: 'Go', status: 'completed', size: '345 MB', contributors: 2 },
-  { id: '3', name: 'Data Pipeline', updatedAt: new Date(Date.now() - 86400000 * 5), tech: 'Python', status: 'active', size: '2.8 GB', contributors: 7 },
-  { id: '4', name: 'Client Portal', updatedAt: new Date(Date.now() - 86400000 * 12), tech: 'React', status: 'active', size: '890 MB', contributors: 3 },
+  { id: '1', name: 'Core Infrastructure', updatedAt: new Date(), tech: 'Rust', status: 'active', size: '1.2 GB', modules: 14, progress: 68, currentTask: 'Compiling AST...' },
+  { id: '2', name: 'Authentication Service', updatedAt: new Date(Date.now() - 86400000 * 2), tech: 'Go', status: 'completed', size: '345 MB', modules: 6 },
+  { id: '3', name: 'Data Pipeline', updatedAt: new Date(Date.now() - 86400000 * 5), tech: 'Python', status: 'active', size: '2.8 GB', modules: 27, progress: 34, currentTask: 'Training models...' },
+  { id: '4', name: 'Client Portal', updatedAt: new Date(Date.now() - 86400000 * 12), tech: 'React', status: 'active', size: '890 MB', modules: 43, progress: 89, currentTask: 'Bundling assets...' },
 ];
 
 // --- Animation Config ---
@@ -275,59 +277,49 @@ const ProjectCard = ({
               {project.updatedAt.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })} at {project.updatedAt.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' })}
             </span>
           </div>
-          <div className="flex justify-between items-center text-sm group/metric">
-            <span className="text-white/40 font-light flex items-center gap-2">
-              <Users size={14} className="text-white/20" /> Team
-            </span>
-            <span className="text-white/80 font-medium tracking-wide">
-              {project.contributors} {project.contributors === 1 ? 'Member' : 'Members'}
-            </span>
-          </div>
         </div>
+
+        {/* Agentic Progress Bar */}
+        {project.status === 'active' && (
+          <div className="mb-6">
+            <div className="flex justify-between items-end mb-2">
+              <div className="flex items-center gap-2 text-[10px] text-white/60 font-mono uppercase tracking-wider">
+                <span className="truncate max-w-[180px]">{'{Task}'}</span>
+              </div>
+              <span className="text-[10px] font-mono text-white/80">{Math.floor(project.progress || 0)}%</span>
+            </div>
+            <div className="h-1 w-full bg-white/10 rounded-full overflow-hidden relative">
+              <motion.div 
+                className="absolute top-0 left-0 h-full bg-white shadow-[0_0_10px_rgba(255,255,255,0.8)]"
+                initial={{ width: `${project.progress || 0}%` }}
+                animate={{ width: `${project.progress || 0}%` }}
+                transition={{ duration: 0.5, ease: "easeOut" }}
+              />
+            </div>
+          </div>
+        )}
 
         <div className="flex items-center justify-between pt-5 border-t border-white/[0.05] mt-auto">
           <div className="flex items-center gap-2 text-[10px] text-white/40 font-mono uppercase tracking-widest">
             {project.status === 'active' ? (
-              <div className="relative flex items-center justify-center w-4 h-4 mr-1">
-                {/* Sonar ripples */}
-                <motion.div 
-                  animate={{ scale: [0.5, 2.5], opacity: [0.5, 0] }}
-                  transition={{ duration: 2, repeat: Infinity, ease: "easeOut" }}
-                  className="absolute inset-0 m-auto w-2 h-2 border border-white/50 rounded-full"
-                />
-                <motion.div 
-                  animate={{ scale: [0.5, 2.5], opacity: [0.5, 0] }}
-                  transition={{ duration: 2, repeat: Infinity, ease: "easeOut", delay: 1 }}
-                  className="absolute inset-0 m-auto w-2 h-2 border border-white/50 rounded-full"
-                />
-                
-                {/* Outer spinning dashed ring */}
-                <motion.div 
-                  animate={{ rotate: 360 }}
-                  transition={{ duration: 5, repeat: Infinity, ease: "linear" }}
-                  className="absolute inset-0 rounded-full border border-dashed border-white/30"
-                />
-                
-                {/* Inner spinning arc */}
-                <motion.div 
-                  animate={{ rotate: -360 }}
-                  transition={{ duration: 1.5, repeat: Infinity, ease: "linear" }}
-                  className="absolute inset-[3px] rounded-full border-[1.5px] border-transparent border-t-white border-r-white/50"
-                />
-
-                {/* Core glowing dot */}
-                <motion.div 
-                  animate={{ scale: [0.8, 1.2, 0.8], opacity: [0.5, 1, 0.5] }}
-                  transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
-                  className="w-1.5 h-1.5 bg-white rounded-full shadow-[0_0_8px_rgba(255,255,255,1)]" 
-                />
-              </div>
+              <motion.span
+                className="bg-[linear-gradient(110deg,#404040,35%,#fff,50%,#404040,75%,#404040)] bg-[length:200%_100%] bg-clip-text text-transparent"
+                initial={{ backgroundPosition: "200% 0" }}
+                animate={{ backgroundPosition: "-200% 0" }}
+                transition={{
+                  repeat: Infinity,
+                  duration: 4,
+                  ease: "linear",
+                }}
+              >
+                In Progress
+              </motion.span>
             ) : (
-              <div className="w-1.5 h-1.5 rounded-full bg-white/20" />
+              <>
+                <div className="w-1.5 h-1.5 rounded-full bg-white/20" />
+                <span>Completed</span>
+              </>
             )}
-            <span className={project.status === 'active' ? 'text-white/70' : ''}>
-              {project.status === 'active' ? 'In Progress' : 'Completed'}
-            </span>
           </div>
           <div className="flex items-center gap-1 text-[10px] text-white/50 font-mono uppercase tracking-widest group-hover:text-white transition-colors">
             {project.tech}
@@ -347,7 +339,52 @@ export default function App() {
   const [modal, setModal] = useState<ModalConfig>({ isOpen: false, mode: 'create' });
   const [inputValue, setInputValue] = useState('');
   const [activeMenu, setActiveMenu] = useState<string | null>(null);
+  const [isAgentConsoleOpen, setIsAgentConsoleOpen] = useState(true);
   const filterRef = useRef<HTMLDivElement>(null);
+
+  // Agent Simulation Hook
+  useEffect(() => {
+    const tasks = [
+      "Analyzing dependencies...",
+      "Optimizing AST...",
+      "Generating type definitions...",
+      "Running test suite...",
+      "Refactoring legacy modules...",
+      "Resolving merge conflicts...",
+      "Synthesizing new components...",
+      "Deploying to edge...",
+      "Compiling WebAssembly..."
+    ];
+
+    const interval = setInterval(() => {
+      setProjects(currentProjects => 
+        currentProjects.map(p => {
+          if (p.status !== 'active') return p;
+          
+          let newProgress = (p.progress || 0) + (Math.random() * 5);
+          let newStatus = p.status;
+          let newTask = p.currentTask;
+
+          if (newProgress >= 100) {
+            newProgress = 100;
+            newStatus = 'completed';
+            newTask = 'Task completed successfully.';
+          } else if (Math.random() > 0.6) {
+            newTask = tasks[Math.floor(Math.random() * tasks.length)];
+          }
+
+          return {
+            ...p,
+            progress: newProgress,
+            status: newStatus,
+            currentTask: newTask
+          };
+        })
+      );
+    }, 2500);
+
+    return () => clearInterval(interval);
+  }, []);
 
   // Close dropdowns when clicking outside
   useEffect(() => {
@@ -698,6 +735,110 @@ export default function App() {
               </div>
             </motion.div>
           </div>
+        )}
+      </AnimatePresence>
+
+      {/* Autonomous Agent Console (Floating Bottom Right) */}
+      <AnimatePresence>
+        {projects.some(p => p.status === 'active') && (
+          <motion.div
+            initial={{ opacity: 0, y: 20, scale: 0.95, filter: 'blur(10px)' }}
+            animate={{ opacity: 1, y: 0, scale: 1, filter: 'blur(0px)' }}
+            exit={{ opacity: 0, y: 20, scale: 0.95, filter: 'blur(10px)' }}
+            transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+            className="fixed bottom-8 right-8 z-40 w-80 bg-[#0a0a0a]/90 backdrop-blur-2xl border border-white/10 rounded-2xl shadow-[0_20px_40px_rgba(0,0,0,0.5),0_0_0_1px_rgba(255,255,255,0.05)] overflow-hidden flex flex-col"
+          >
+            {/* Console Header (Clickable) */}
+            <button 
+              onClick={() => setIsAgentConsoleOpen(!isAgentConsoleOpen)}
+              className="w-full px-4 py-3 border-b border-white/5 flex items-center justify-between bg-white/[0.02] hover:bg-white/[0.04] transition-colors cursor-pointer outline-none"
+            >
+              <div className="flex items-center gap-3">
+                {/* Morphing Square */}
+                <motion.div
+                  className="w-3 h-3 bg-white"
+                  animate={{
+                    borderRadius: ["6%", "50%", "6%"],
+                    rotate: [0, 180, 360],
+                  }}
+                  transition={{
+                    duration: 2,
+                    repeat: Infinity,
+                    ease: "easeInOut",
+                  }}
+                />
+                <span className="text-[10px] font-mono uppercase tracking-widest text-white/80 font-medium">
+                  Agent Network
+                </span>
+              </div>
+              <div className="flex items-center gap-3">
+                <span className="text-[10px] font-mono text-white/60 uppercase tracking-widest">
+                  {projects.filter(p => p.status === 'active').length} Active
+                </span>
+                <motion.div
+                  animate={{ rotate: isAgentConsoleOpen ? 0 : 180 }}
+                  transition={{ duration: 0.3, ease: "easeInOut" }}
+                  className="text-white/40"
+                >
+                  <ChevronDown size={14} />
+                </motion.div>
+              </div>
+            </button>
+            
+            {/* Active Tasks List (Collapsible) */}
+            <AnimatePresence initial={false}>
+              {isAgentConsoleOpen && (
+                <motion.div
+                  initial={{ height: 0, opacity: 0 }}
+                  animate={{ height: 'auto', opacity: 1 }}
+                  exit={{ height: 0, opacity: 0 }}
+                  transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+                  className="overflow-hidden"
+                >
+                  <div className="p-2 max-h-[200px] overflow-y-auto custom-scrollbar">
+                    <AnimatePresence mode="popLayout">
+                      {projects.filter(p => p.status === 'active').map(project => (
+                        <motion.div 
+                          key={project.id}
+                          layout
+                          initial={{ opacity: 0, x: -10 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          exit={{ opacity: 0, scale: 0.95 }}
+                          className="p-3 rounded-xl hover:bg-white/[0.02] transition-colors group/task"
+                        >
+                          <div className="flex items-center justify-between text-[10px] font-mono mb-2">
+                            <span className="text-white/40 truncate max-w-[140px]">{'{project name}'}</span>
+                            <span className="text-white/40">{Math.floor(project.progress || 0)}%</span>
+                          </div>
+                          <div className="flex items-start gap-3">
+                            <motion.div 
+                              animate={{ rotate: 360 }} 
+                              transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
+                              className="w-3.5 h-3.5 mt-0.5 border-[1px] border-white/20 border-t-white/80 border-r-white/40 rounded-full shrink-0"
+                            />
+                            <div className="flex-1">
+                              <span className="text-xs text-white/80 font-light leading-tight block">
+                                {'{task name}'}
+                              </span>
+                              {/* Mini progress bar */}
+                              <div className="h-[2px] w-full bg-white/10 rounded-full mt-2 overflow-hidden">
+                                <motion.div 
+                                  className="h-full bg-white/60"
+                                  initial={{ width: `${project.progress || 0}%` }}
+                                  animate={{ width: `${project.progress || 0}%` }}
+                                  transition={{ duration: 0.5, ease: "easeOut" }}
+                                />
+                              </div>
+                            </div>
+                          </div>
+                        </motion.div>
+                      ))}
+                    </AnimatePresence>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </motion.div>
         )}
       </AnimatePresence>
     </div>
